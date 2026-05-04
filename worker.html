@@ -204,6 +204,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <script>
 
+
 const SUPABASE_URL = 'https://sygqmljlbnquwssemrae.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5Z3FtbGpsYm5xdXdzc2VtcmFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNDE0ODcsImV4cCI6MjA5MjgxNzQ4N30.MLvlvtOZL_Rxwt6oO5HI-6ctQSvTBkbn9MiZY_t8YRY';
 
@@ -510,6 +511,17 @@ function showLoading() {
 }
 
 // ── TAB: DANAS ────────────────────────────────────────────────
+
+function toggleOstaloField() {
+  const sel = document.getElementById('wl_site');
+  const field = document.getElementById('ostaloField');
+  if (!sel || !field) return;
+  field.style.display = sel.value === '__ostalo__' ? 'block' : 'none';
+  if (sel.value !== '__ostalo__') {
+    const inp = document.getElementById('wl_site_ostalo');
+    if (inp) inp.value = '';
+  }
+}
 async function renderDanas() {
   const todayStr = today();
   const dayNames = ['Nedjelja','Ponedjeljak','Utorak','Srijeda','Četvrtak','Petak','Subota'];
@@ -551,11 +563,16 @@ async function renderDanas() {
         </div>
       </div>
       <div class="field">
-        <label>Gradilište</label>
-        <select id="wl_site">
+        <label>Gradilište / Lokacija</label>
+        <select id="wl_site" onchange="toggleOstaloField()">
           <option value="">— odaberi gradilište —</option>
           ${siteOpts}
+          <option value="__ostalo__">Ostalo (skladište, ured, put...)</option>
         </select>
+      </div>
+      <div class="field" id="ostaloField" style="display:none">
+        <label>Opis lokacije</label>
+        <input type="text" id="wl_site_ostalo" placeholder="Npr. Skladište, Ured, Servis vozila...">
       </div>
       <div class="field">
         <label>Vrsta posla</label>
@@ -599,13 +616,25 @@ async function renderDanas() {
 
 async function submitWorkLog() {
   const hours = parseFloat(document.getElementById('wl_hours').value);
-  const site_id = document.getElementById('wl_site').value || null;
+  const siteVal = document.getElementById('wl_site').value;
   const desc = document.getElementById('wl_desc').value.trim();
   const date = document.getElementById('wl_date').value;
   const work_type = document.getElementById('wl_type').value;
 
   if (!hours || hours <= 0) { toast('Upiši broj sati', 'error'); return; }
-  if (!site_id) { toast('Odaberi gradilište', 'error'); return; }
+  if (!siteVal) { toast('Odaberi gradilište ili Ostalo', 'error'); return; }
+
+  // Handle Ostalo
+  let site_id = null;
+  let finalDesc = desc;
+  if (siteVal === '__ostalo__') {
+    const ostaloDesc = (document.getElementById('wl_site_ostalo').value || '').trim();
+    if (!ostaloDesc) { toast('Upiši opis lokacije', 'error'); return; }
+    site_id = null;
+    finalDesc = ostaloDesc + (desc ? ' — ' + desc : '');
+  } else {
+    site_id = siteVal;
+  }
 
   const btn = document.getElementById('wlSubmitBtn');
   btn.disabled = true;
@@ -613,7 +642,7 @@ async function submitWorkLog() {
 
   const { error } = await sb.from('work_logs').insert({
     worker_id: currentWorker.id, site_id, hours, work_type,
-    description: desc || null, date
+    description: finalDesc || null, date
   });
 
   if (error) {
@@ -1031,6 +1060,7 @@ document.getElementById('loginName').addEventListener('keydown', e => { if (e.ke
   currentWorker = session.worker;
   enterPanel(currentWorker);
 })();
+
 
 </script>
 </body>
