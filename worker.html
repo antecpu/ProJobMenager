@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="hr"><head>
-<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<html lang="hr">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Manager PRO — Radnički panel</title>
-<link href="worker_files/css2.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -165,7 +165,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div class="login-wrap" id="setupScreen" style="display:none;">
   <div class="setup-card">
     <div class="setup-icon">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
     </div>
     <div class="setup-title">Postavi lozinku</div>
     <div class="setup-sub">Ovo je tvoja prva prijava.<br>Odaberi lozinku koju ćeš pamtiti.</div>
@@ -203,6 +203,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div class="toast" id="toast"></div>
 
 <script>
+
 const SUPABASE_URL = 'https://sygqmljlbnquwssemrae.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5Z3FtbGpsYm5xdXdzc2VtcmFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNDE0ODcsImV4cCI6MjA5MjgxNzQ4N30.MLvlvtOZL_Rxwt6oO5HI-6ctQSvTBkbn9MiZY_t8YRY';
 
@@ -316,7 +317,7 @@ let uploadedFile = null;
 
 const MONTHS = ['Siječanj','Veljača','Ožujak','Travanj','Svibanj','Lipanj','Srpanj','Kolovoz','Rujan','Listopad','Studeni','Prosinac'];
 const CAT_LABELS = { mat:'Materijal', koop:'Kooperant', stro:'Strojevi/gorivo', rad:'Radna snaga', ostalo:'Ostalo' };
-const TYPE_LABELS = { stemanje:'Štemanje', montaza:'Montaža', zidanje:'Zidanje', betoniranje:'Betoniranje', put:'Put', iskop:'Iskop', ostalo:'Ostalo' };
+const TYPE_LABELS = { paneli:'Postavljanje FN panela', konstrukcija:'Postavljanje konstrukcije', ac:'Montaža AC strane', dc:'Montaža DC strane', elektrika:'Električarski radovi', montaza:'Montaža', stemanje:'Štemanje', zidanje:'Zidanje', betoniranje:'Betoniranje', put:'Put / prijevoz', iskop:'Iskop', ostalo:'Ostalo' };
 
 function fmtEur(n) {
   return Number(n || 0).toLocaleString('hr-HR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
@@ -481,15 +482,12 @@ function enterPanel(worker) {
 }
 
 function doLogout() {
-  const session = getSession();
-  if (session?.token) {
+  const session = JSON.parse(localStorage.getItem('mp_session') || '{}');
+  if (session.token) {
     sb.from('worker_sessions').eq('token', session.token).delete().then(() => {});
   }
-  clearSession();
-  currentWorker = null;
-  showScreen('login');
-  document.getElementById('loginName').value = '';
-  document.getElementById('loginPass').value = '';
+  localStorage.removeItem('mp_session');
+  window.location.href = 'login.html';
 }
 
 // ── TABS ─────────────────────────────────────────────────────
@@ -562,8 +560,13 @@ async function renderDanas() {
       <div class="field">
         <label>Vrsta posla</label>
         <select id="wl_type">
-          <option value="stemanje">Štemanje</option>
+          <option value="paneli">Postavljanje fotonaponskih panela</option>
+          <option value="konstrukcija">Postavljanje konstrukcije</option>
+          <option value="ac">Montaža AC strane elektrane</option>
+          <option value="dc">Montaža DC strane elektrane</option>
+          <option value="elektrika">Električarski radovi</option>
           <option value="montaza">Montaža</option>
+          <option value="stemanje">Štemanje</option>
           <option value="zidanje">Zidanje</option>
           <option value="betoniranje">Betoniranje</option>
           <option value="put">Put / prijevoz</option>
@@ -1006,9 +1009,29 @@ async function tryAutoLogin() {
 document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 document.getElementById('loginName').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
 
-// ── INIT ─────────────────────────────────────────────────────
-tryAutoLogin();
+// ── INIT — reads session from login.html ─────────────────────
+(async function checkSession() {
+  const session = JSON.parse(localStorage.getItem('mp_session') || '{}');
+  if (!session.token || !session.worker) {
+    window.location.href = 'login.html';
+    return;
+  }
+  // Verify session still valid
+  try {
+    const { data } = await sb.from('worker_sessions')
+      .select('id').eq('token', session.token)
+      .gt('expires_at', new Date().toISOString()).limit(1).get();
+    if (!data || data.length === 0) {
+      localStorage.removeItem('mp_session');
+      window.location.href = 'login.html';
+      return;
+    }
+  } catch(e) {}
+  // Load worker data
+  currentWorker = session.worker;
+  enterPanel(currentWorker);
+})();
+
 </script>
-
-
-</body></html>
+</body>
+</html>
