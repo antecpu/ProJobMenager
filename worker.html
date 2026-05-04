@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="hr"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Manager PRO — Radnički panel</title>
+<link href="worker_files/css2.css" rel="stylesheet">
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;--surface:#fff;--surface2:#f7f8fa;
+  --text:#111827;--text-muted:#6b7280;--text-faint:#9ca3af;
+  --border:rgba(0,0,0,.08);--border-strong:rgba(0,0,0,.14);
+  --blue:#1d4ed8;--blue-bg:#dbeafe;--blue-text:#1e40af;
+  --green:#16a34a;--green-bg:#dcfce7;--green-text:#166534;
+  --red:#dc2626;--red-bg:#fee2e2;--red-text:#991b1b;
+  --amber:#d97706;--amber-bg:#fef3c7;--amber-text:#92400e;
+  --radius:12px;--radius-sm:8px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;}
+
+/* ── LOGIN ── */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-card{background:var(--surface);border-radius:var(--radius);padding:32px 28px;width:100%;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.08);}
+.login-logo{text-align:center;margin-bottom:28px;}
+.login-logo .logo-label{font-size:11px;font-family:'DM Mono',monospace;letter-spacing:.12em;color:#4b6a9b;text-transform:uppercase;}
+.login-logo .logo-title{font-size:24px;font-weight:600;color:#0c1220;margin-top:4px;}
+.login-logo .logo-sub{font-size:13px;color:var(--text-muted);margin-top:4px;}
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-size:12px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.form-group input{width:100%;padding:11px 14px;border:1.5px solid var(--border-strong);border-radius:var(--radius-sm);font-size:15px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface);transition:border-color .15s;}
+.form-group input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,78,216,.1);}
+.login-btn{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:8px;transition:background .15s;}
+.login-btn:hover{background:#1e40af;}
+.login-btn:disabled{background:#93c5fd;cursor:not-allowed;}
+.error-msg{background:var(--red-bg);color:var(--red-text);border:1px solid #fca5a5;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin-top:12px;display:none;}
+.error-msg.show{display:block;}
+
+/* ── PANEL ── */
+.panel{display:none;min-height:100vh;flex-direction:column;}
+.panel.active{display:flex;}
+.panel-topbar{background:#0c1220;color:#f1f5f9;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.panel-topbar-left .greeting{font-size:13px;color:#94a3b8;}
+.panel-topbar-left .worker-name{font-size:16px;font-weight:600;margin-top:1px;}
+.logout-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#94a3b8;padding:7px 14px;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.panel-tabs{background:#0c1220;border-bottom:1px solid rgba(255,255,255,.08);display:flex;padding:0 18px;overflow-x:auto;}
+.panel-tabs::-webkit-scrollbar{display:none;}
+.ptab{padding:11px 16px;font-size:13px;font-weight:500;color:#64748b;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-family:'DM Sans',sans-serif;transition:color .12s,border-color .12s;}
+.ptab.active{color:#93c5fd;border-bottom-color:#93c5fd;}
+.panel-body{flex:1;padding:16px;overflow-y:auto;padding-bottom:80px;}
+
+/* ── CARDS & FORMS ── */
+.card{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:12px;border:1px solid var(--border);}
+.card-title{font-size:14px;font-weight:600;margin-bottom:14px;color:var(--text);}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;padding:10px 13px;border:1.5px solid var(--border-strong);border-radius:var(--radius-sm);font-size:15px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface);}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,78,216,.1);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.submit-btn{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;margin-top:4px;}
+.submit-btn:hover{background:#1e40af;}
+.submit-btn:disabled{background:#93c5fd;}
+.submit-btn.green{background:var(--green);}.submit-btn.green:hover{background:#15803d;}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;}
+.stat-box .sval{font-size:26px;font-weight:600;font-family:'DM Mono',monospace;color:var(--text);}
+.stat-box .slbl{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;margin-top:3px;}
+.stat-box.blue .sval{color:var(--blue);}
+.stat-box.green .sval{color:var(--green);}
+.stat-box.red .sval{color:var(--red);}
+
+/* ── LOG ITEMS ── */
+.log-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;}
+.log-item-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.log-date{font-size:12px;font-family:'DM Mono',monospace;color:var(--text-muted);}
+.log-hours{font-size:14px;font-weight:600;color:var(--blue);}
+.log-amount{font-size:14px;font-weight:600;color:var(--red);}
+.log-desc{font-size:13px;color:var(--text-muted);}
+.log-site{font-size:11px;background:var(--blue-bg);color:var(--blue-text);padding:2px 8px;border-radius:4px;display:inline-block;margin-top:4px;}
+.log-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;}
+.badge-approved{background:var(--green-bg);color:var(--green-text);}
+.badge-pending{background:var(--amber-bg);color:var(--amber-text);}
+
+/* ── UPLOAD ── */
+.upload-area{border:2px dashed var(--border-strong);border-radius:var(--radius-sm);padding:28px 20px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;}
+.upload-area:hover,.upload-area.drag{border-color:var(--blue);background:var(--blue-bg);}
+.upload-area svg{width:36px;height:36px;color:var(--text-faint);margin:0 auto 8px;display:block;}
+.upload-area .upload-label{font-size:14px;font-weight:500;color:var(--text-muted);}
+.upload-area .upload-sub{font-size:12px;color:var(--text-faint);margin-top:4px;}
+.upload-preview{margin-top:12px;display:none;}
+.upload-preview img{max-width:100%;border-radius:var(--radius-sm);max-height:200px;object-fit:contain;}
+.upload-preview .file-name{font-size:12px;color:var(--text-muted);margin-top:6px;text-align:center;}
+
+/* ── PASSWORD SETUP ── */
+.setup-card{background:var(--surface);border-radius:var(--radius);padding:32px 28px;width:100%;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.08);}
+.setup-icon{width:56px;height:56px;background:var(--blue-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+.setup-title{font-size:20px;font-weight:600;text-align:center;margin-bottom:6px;}
+.setup-sub{font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:24px;line-height:1.5;}
+.password-strength{height:4px;border-radius:99px;background:var(--border-strong);margin-top:6px;overflow:hidden;}
+.strength-fill{height:100%;border-radius:99px;transition:width .3s,background .3s;}
+
+/* ── SECTION HEADER ── */
+.section-hdr{font-size:13px;font-weight:600;color:var(--text-muted);margin:16px 0 8px;display:flex;align-items:center;justify-content:space-between;}
+.section-count{font-size:11px;color:var(--text-faint);font-weight:400;}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:32px 20px;color:var(--text-faint);font-size:13px;}
+
+/* ── ERROR STATE ── */
+.error-state{background:var(--red-bg);border:1px solid #fca5a5;border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--red-text);margin-bottom:12px;}
+
+/* ── LOADING ── */
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px;}
+.spinner.dark{border-color:rgba(0,0,0,.1);border-top-color:var(--blue);}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-wrap{text-align:center;padding:40px 20px;color:var(--text-faint);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#f1f5f9;padding:12px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;z-index:9999;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+.toast.error{background:#991b1b;}
+.toast.success{background:#166534;}
+
+/* ── PLAĆA ROWS ── */
+.pay-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);}
+.pay-row:last-child{border-bottom:none;}
+.pay-row-label{color:var(--text-muted);}
+.pay-row-val{font-family:'DM Mono',monospace;font-weight:500;}
+.pay-total{display:flex;justify-content:space-between;font-size:15px;font-weight:700;padding:10px 0 4px;}
+
+/* ── INFO GRID ── */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.info-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;}
+.info-box-label{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;}
+.info-box-val{font-size:13px;font-weight:500;margin-top:3px;}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN SCREEN ── -->
+<div class="login-wrap" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-label">Manager</div>
+      <div class="logo-title">PRO</div>
+      <div class="logo-sub">Radnički panel</div>
+    </div>
+    <div class="form-group">
+      <label>Ime i prezime</label>
+      <input type="text" id="loginName" placeholder="Npr. Ivan Horvat" autocomplete="name" autocapitalize="words">
+    </div>
+    <div class="form-group">
+      <label>Lozinka</label>
+      <input type="password" id="loginPass" placeholder="Tvoja lozinka" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Prijava</button>
+    <div class="error-msg" id="loginError"></div>
+  </div>
+</div>
+
+<!-- ── FIRST LOGIN — SET PASSWORD ── -->
+<div class="login-wrap" id="setupScreen" style="display:none;">
+  <div class="setup-card">
+    <div class="setup-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
+    </div>
+    <div class="setup-title">Postavi lozinku</div>
+    <div class="setup-sub">Ovo je tvoja prva prijava.<br>Odaberi lozinku koju ćeš pamtiti.</div>
+    <div class="form-group">
+      <label>Nova lozinka</label>
+      <input type="password" id="newPass1" placeholder="Min. 6 znakova" oninput="checkStrength()">
+      <div class="password-strength"><div class="strength-fill" id="strengthFill" style="width:0%;background:var(--red)"></div></div>
+    </div>
+    <div class="form-group">
+      <label>Ponovi lozinku</label>
+      <input type="password" id="newPass2" placeholder="Isti kao gore">
+    </div>
+    <button class="login-btn" id="setupBtn" onclick="doSetupPassword()">Spremi i nastavi</button>
+    <div class="error-msg" id="setupError"></div>
+  </div>
+</div>
+
+<!-- ── MAIN PANEL ── -->
+<div class="panel" id="mainPanel">
+  <div class="panel-topbar">
+    <div class="panel-topbar-left">
+      <div class="greeting">Dobrodošao,</div>
+      <div class="worker-name" id="workerNameDisplay"></div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Odjava</button>
+  </div>
+  <div class="panel-tabs">
+    <button class="ptab active" onclick="showTab('danas')">Danas</button>
+    <button class="ptab" onclick="showTab('racuni')">Računi</button>
+    <button class="ptab" onclick="showTab('pregled')">Moj pregled</button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://sygqmljlbnquwssemrae.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5Z3FtbGpsYm5xdXdzc2VtcmFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNDE0ODcsImV4cCI6MjA5MjgxNzQ4N30.MLvlvtOZL_Rxwt6oO5HI-6ctQSvTBkbn9MiZY_t8YRY';
+
+// ── SUPABASE REST WRAPPER ─────────────────────────────────────
+const sb = {
+  async _req(method, path, body, params) {
+    let url = `${SUPABASE_URL}/rest/v1/${path}`;
+    if (params) {
+      const p = new URLSearchParams();
+      for (const [k, v] of Object.entries(params)) p.append(k, v);
+      url += '?' + p.toString();
+    }
+    const opts = {
+      method,
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': (method === 'POST' ? 'return=representation' : 'return=minimal')
+      }
+    };
+    if (body) opts.body = JSON.stringify(body);
+    try {
+      const res = await fetch(url, opts);
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : null;
+      if (!res.ok) return { data: null, error: { message: data?.message || data?.hint || data?.error || res.statusText, details: data } };
+      return { data, error: null };
+    } catch(e) {
+      return { data: null, error: { message: e.message } };
+    }
+  },
+
+  from(table) {
+    const self = this;
+    const _filters = [];
+    let _select = '*';
+    let _order = null;
+    let _limit = null;
+
+    const q = {
+      select(cols) { _select = cols; return q; },
+      eq(col, val) { _filters.push([col, 'eq', val]); return q; },
+      neq(col, val) { _filters.push([col, 'neq', val]); return q; },
+      ilike(col, val) { _filters.push([col, 'ilike', val]); return q; },
+      gte(col, val) { _filters.push([col, 'gte', val]); return q; },
+      lte(col, val) { _filters.push([col, 'lte', val]); return q; },
+      gt(col, val) { _filters.push([col, 'gt', val]); return q; },
+      order(col, opts) { _order = col + (opts?.ascending === false ? '.desc' : '.asc'); return q; },
+      limit(n) { _limit = n; return q; },
+
+      async get() {
+        const params = { select: _select };
+        _filters.forEach(([col, op, val]) => { params[col] = `${op}.${val}`; });
+        if (_order) params['order'] = _order;
+        if (_limit) params['limit'] = _limit;
+        return self._req('GET', table, null, params);
+      },
+
+      async insert(body) {
+        return self._req('POST', table, Array.isArray(body) ? body : [body]);
+      },
+
+      async update(body) {
+        const params = {};
+        _filters.forEach(([col, op, val]) => { params[col] = `${op}.${val}`; });
+        return self._req('PATCH', table, body, params);
+      },
+
+      async delete() {
+        const params = {};
+        _filters.forEach(([col, op, val]) => { params[col] = `${op}.${val}`; });
+        return self._req('DELETE', table, null, params);
+      },
+
+      // Promise-like for await sb.from(...).then(...)
+      then(resolve, reject) {
+        return this.get().then(resolve, reject);
+      }
+    };
+    return q;
+  },
+
+  storage: {
+    from(bucket) {
+      return {
+        async upload(path, file) {
+          const url = `${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
+          try {
+            const res = await fetch(url, {
+              method: 'POST',
+              headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+              body: file
+            });
+            const data = await res.json();
+            if (!res.ok) return { data: null, error: data };
+            return { data: { path }, error: null };
+          } catch(e) {
+            return { data: null, error: { message: e.message } };
+          }
+        }
+      };
+    }
+  }
+};
+
+// ── HELPERS ──────────────────────────────────────────────────
+let currentWorker = null;
+let currentTab = 'danas';
+let uploadedFile = null;
+
+const MONTHS = ['Siječanj','Veljača','Ožujak','Travanj','Svibanj','Lipanj','Srpanj','Kolovoz','Rujan','Listopad','Studeni','Prosinac'];
+const CAT_LABELS = { mat:'Materijal', koop:'Kooperant', stro:'Strojevi/gorivo', rad:'Radna snaga', ostalo:'Ostalo' };
+const TYPE_LABELS = { stemanje:'Štemanje', montaza:'Montaža', zidanje:'Zidanje', betoniranje:'Betoniranje', put:'Put', iskop:'Iskop', ostalo:'Ostalo' };
+
+function fmtEur(n) {
+  return Number(n || 0).toLocaleString('hr-HR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+}
+
+function today() { return new Date().toISOString().split('T')[0]; }
+
+function monthStart(date) {
+  const d = date || new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`;
+}
+
+function monthEnd(date) {
+  const d = date || new Date();
+  return new Date(d.getFullYear(), d.getMonth()+1, 0).toISOString().split('T')[0];
+}
+
+function monthKey(date) {
+  const d = date || new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+// ── SESSION ──────────────────────────────────────────────────
+function saveSession(worker, token) {
+  localStorage.setItem('worker_session', JSON.stringify({ worker, token, at: Date.now() }));
+}
+function getSession() {
+  try { return JSON.parse(localStorage.getItem('worker_session')); } catch(e) { return null; }
+}
+function clearSession() { localStorage.removeItem('worker_session'); }
+
+// ── TOAST ────────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+// ── PASSWORD HASHING ─────────────────────────────────────────
+async function hashPwd(pwd) {
+  const enc = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey('raw', enc.encode(pwd), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name:'PBKDF2', salt, iterations:100000, hash:'SHA-256' }, key, 256);
+  return JSON.stringify({ salt: Array.from(salt), hash: Array.from(new Uint8Array(bits)) });
+}
+
+async function checkPwd(pwd, stored) {
+  try {
+    const { salt, hash } = JSON.parse(stored);
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey('raw', enc.encode(pwd), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits({ name:'PBKDF2', salt:new Uint8Array(salt), iterations:100000, hash:'SHA-256' }, key, 256);
+    return JSON.stringify(Array.from(new Uint8Array(bits))) === JSON.stringify(hash);
+  } catch(e) { return false; }
+}
+
+// ── LOGIN ────────────────────────────────────────────────────
+async function doLogin() {
+  const name = document.getElementById('loginName').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const btn  = document.getElementById('loginBtn');
+  const err  = document.getElementById('loginError');
+  err.classList.remove('show');
+
+  if (!name) { showErr(err, 'Upiši ime i prezime.'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Provjera...';
+
+  try {
+    const { data: workers, error } = await sb.from('workers')
+      .select('*').ilike('full_name', name).eq('active', true).limit(1).get();
+
+    if (error) throw new Error('Greška baze: ' + error.message);
+    if (!workers || workers.length === 0) {
+      showErr(err, 'Radnik nije pronađen. Provjeri ime i prezime.');
+      return;
+    }
+
+    const worker = workers[0];
+
+    if (!worker.password_hash) {
+      currentWorker = worker;
+      showScreen('setup');
+      return;
+    }
+
+    if (!pass) { showErr(err, 'Upiši lozinku.'); return; }
+
+    const valid = await checkPwd(pass, worker.password_hash);
+    if (!valid) { showErr(err, 'Pogrešna lozinka.'); return; }
+
+    const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 24*60*60*1000).toISOString();
+    await sb.from('worker_sessions').insert({ worker_id: worker.id, token, expires_at: expiresAt });
+
+    currentWorker = worker;
+    saveSession(worker, token);
+    enterPanel(worker);
+
+  } catch(e) {
+    showErr(err, e.message || 'Neočekivana greška.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Prijava';
+  }
+}
+
+// ── SET PASSWORD ─────────────────────────────────────────────
+function checkStrength() {
+  const pwd = document.getElementById('newPass1').value;
+  const fill = document.getElementById('strengthFill');
+  let s = 0;
+  if (pwd.length >= 6) s += 33;
+  if (pwd.match(/[A-Z]/)) s += 33;
+  if (pwd.match(/[0-9!@#$%]/)) s += 34;
+  fill.style.width = s + '%';
+  fill.style.background = s < 33 ? 'var(--red)' : s < 66 ? 'var(--amber)' : 'var(--green)';
+}
+
+async function doSetupPassword() {
+  const p1  = document.getElementById('newPass1').value;
+  const p2  = document.getElementById('newPass2').value;
+  const btn = document.getElementById('setupBtn');
+  const err = document.getElementById('setupError');
+  err.classList.remove('show');
+
+  if (p1.length < 6) { showErr(err, 'Lozinka mora imati min. 6 znakova.'); return; }
+  if (p1 !== p2) { showErr(err, 'Lozinke se ne podudaraju.'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Postavljam...';
+
+  try {
+    const hash = await hashPwd(p1);
+    const { error } = await sb.from('workers').eq('id', currentWorker.id).update({ password_hash: hash });
+    if (error) throw new Error(error.message);
+
+    const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 24*60*60*1000).toISOString();
+    await sb.from('worker_sessions').insert({ worker_id: currentWorker.id, token, expires_at: expiresAt });
+
+    saveSession(currentWorker, token);
+    enterPanel(currentWorker);
+    toast('Lozinka postavljena! Dobrodošao.', 'success');
+
+  } catch(e) {
+    showErr(err, 'Greška: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Spremi i nastavi';
+  }
+}
+
+// ── PANEL ────────────────────────────────────────────────────
+function enterPanel(worker) {
+  document.getElementById('workerNameDisplay').textContent = worker.full_name;
+  showScreen('panel');
+  showTab('danas');
+}
+
+function doLogout() {
+  const session = getSession();
+  if (session?.token) {
+    sb.from('worker_sessions').eq('token', session.token).delete().then(() => {});
+  }
+  clearSession();
+  currentWorker = null;
+  showScreen('login');
+  document.getElementById('loginName').value = '';
+  document.getElementById('loginPass').value = '';
+}
+
+// ── TABS ─────────────────────────────────────────────────────
+function showTab(tab) {
+  currentTab = tab;
+  const tabs = ['danas','racuni','pregled'];
+  document.querySelectorAll('.ptab').forEach((t, i) => t.classList.toggle('active', tabs[i] === tab));
+  showLoading();
+  if (tab === 'danas') renderDanas();
+  else if (tab === 'racuni') renderRacuni();
+  else if (tab === 'pregled') renderPregled();
+}
+
+function showLoading() {
+  document.getElementById('panelBody').innerHTML = `
+    <div class="loading-wrap">
+      <span class="spinner dark"></span>
+      <span style="color:var(--text-faint);font-size:13px;margin-left:8px;">Učitavam...</span>
+    </div>`;
+}
+
+// ── TAB: DANAS ────────────────────────────────────────────────
+async function renderDanas() {
+  const todayStr = today();
+  const dayNames = ['Nedjelja','Ponedjeljak','Utorak','Srijeda','Četvrtak','Petak','Subota'];
+  const d = new Date();
+  const dayName = dayNames[d.getDay()];
+  const dateStr = `${d.getDate()}. ${MONTHS[d.getMonth()]}. ${d.getFullYear()}.`;
+
+  // Load sites and today's logs in parallel
+  const [sitesRes, todayLogsRes] = await Promise.all([
+    sb.from('sites').select('id,name').eq('status','active').order('name', {ascending:true}).get(),
+    sb.from('work_logs').select('id,hours,date,description,work_type,sites(name)')
+      .eq('worker_id', currentWorker.id).eq('date', todayStr).order('created_at',{ascending:false}).get()
+  ]);
+
+  const sites = sitesRes.data || [];
+  const todayLogs = todayLogsRes.data || [];
+  const alreadyHours = todayLogs.reduce((a, l) => a + parseFloat(l.hours||0), 0);
+  const siteOpts = sites.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+  let html = `
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:16px;">
+      <div>
+        <div style="font-size:13px;color:var(--text-muted);">${dayName}</div>
+        <div style="font-size:17px;font-weight:600;">${dateStr}</div>
+      </div>
+      ${alreadyHours > 0 ? `<span style="background:var(--green-bg);color:var(--green-text);border:1px solid #86efac;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;margin-left:auto;">${alreadyHours}h upisano danas</span>` : ''}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Evidencija radnih sati</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Datum</label>
+          <input type="date" id="wl_date" value="${todayStr}">
+        </div>
+        <div class="field">
+          <label>Sati</label>
+          <input type="number" id="wl_hours" placeholder="8" min="0.5" max="24" step="0.5">
+        </div>
+      </div>
+      <div class="field">
+        <label>Gradilište</label>
+        <select id="wl_site">
+          <option value="">— odaberi gradilište —</option>
+          ${siteOpts}
+        </select>
+      </div>
+      <div class="field">
+        <label>Vrsta posla</label>
+        <select id="wl_type">
+          <option value="stemanje">Štemanje</option>
+          <option value="montaza">Montaža</option>
+          <option value="zidanje">Zidanje</option>
+          <option value="betoniranje">Betoniranje</option>
+          <option value="put">Put / prijevoz</option>
+          <option value="iskop">Iskop</option>
+          <option value="ostalo" selected>Ostalo</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Opis posla</label>
+        <textarea id="wl_desc" rows="3" placeholder="Što si radio danas..."></textarea>
+      </div>
+      <button class="submit-btn" id="wlSubmitBtn" onclick="submitWorkLog()">Spremi sate</button>
+    </div>`;
+
+  if (todayLogs.length > 0) {
+    html += `<div class="section-hdr">Upisano danas <span class="section-count">${todayLogs.length} unos(a)</span></div>`;
+    html += todayLogs.map(l => `
+      <div class="log-item">
+        <div class="log-item-header">
+          <span class="log-date">${l.date}</span>
+          <span class="log-hours">${l.hours}h</span>
+        </div>
+        <div class="log-desc">${l.description || TYPE_LABELS[l.work_type] || '—'}</div>
+        ${l.sites ? `<span class="log-site">${l.sites.name}</span>` : ''}
+      </div>`).join('');
+  }
+
+  document.getElementById('panelBody').innerHTML = html;
+}
+
+async function submitWorkLog() {
+  const hours = parseFloat(document.getElementById('wl_hours').value);
+  const site_id = document.getElementById('wl_site').value || null;
+  const desc = document.getElementById('wl_desc').value.trim();
+  const date = document.getElementById('wl_date').value;
+  const work_type = document.getElementById('wl_type').value;
+
+  if (!hours || hours <= 0) { toast('Upiši broj sati', 'error'); return; }
+  if (!site_id) { toast('Odaberi gradilište', 'error'); return; }
+
+  const btn = document.getElementById('wlSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Spremam...';
+
+  const { error } = await sb.from('work_logs').insert({
+    worker_id: currentWorker.id, site_id, hours, work_type,
+    description: desc || null, date
+  });
+
+  if (error) {
+    toast('Greška: ' + error.message, 'error');
+    btn.disabled = false;
+    btn.innerHTML = 'Spremi sate';
+    return;
+  }
+
+  toast('Sati uspješno upisani!', 'success');
+  renderDanas();
+}
+
+// ── TAB: RAČUNI ───────────────────────────────────────────────
+async function renderRacuni() {
+  const todayStr = today();
+  const now = new Date();
+  const mStart = monthStart(now);
+  const mEnd = monthEnd(now);
+
+  // Load sites and this month's expenses in parallel
+  const [sitesRes, expRes] = await Promise.all([
+    sb.from('sites').select('id,name').eq('status','active').order('name',{ascending:true}).get(),
+    sb.from('expenses')
+      .select('id,amount,description,date,approved,category,note,sites(name)')
+      .eq('worker_id', currentWorker.id)
+      .gte('date', mStart)
+      .lte('date', mEnd)
+      .order('date',{ascending:false})
+      .get()
+  ]);
+
+  const sites = sitesRes.data || [];
+  const expenses = expRes.data || [];
+  const siteOpts = sites.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+  // Totals
+  const totalMonth = expenses.reduce((a, e) => a + parseFloat(e.amount||0), 0);
+  const pendingCount = expenses.filter(e => !e.approved).length;
+
+  let html = '';
+
+  // Show error if expenses failed
+  if (expRes.error) {
+    html += `<div class="error-state">⚠ Greška pri učitavanju troškova: ${expRes.error.message}</div>`;
+  }
+
+  html += `
+    <div class="card">
+      <div class="card-title">Dodaj trošak / račun</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Datum</label>
+          <input type="date" id="exp_date" value="${todayStr}">
+        </div>
+        <div class="field">
+          <label>Iznos (€)</label>
+          <input type="number" id="exp_amount" placeholder="0.00" step="0.01" inputmode="decimal">
+        </div>
+      </div>
+      <div class="field">
+        <label>Gradilište</label>
+        <select id="exp_site">
+          <option value="">— odaberi gradilište —</option>
+          ${siteOpts}
+        </select>
+      </div>
+      <div class="field">
+        <label>Kategorija</label>
+        <select id="exp_cat">
+          <option value="mat">Materijal</option>
+          <option value="koop">Kooperant</option>
+          <option value="stro">Strojevi / gorivo</option>
+          <option value="ostalo">Ostalo</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Opis</label>
+        <input type="text" id="exp_desc" placeholder="Npr. Cement 10 vreća, Gorivo...">
+      </div>
+      <div class="field">
+        <label>Slika računa (opcionalno)</label>
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()"
+             ondragover="event.preventDefault();this.classList.add('drag')"
+             ondragleave="this.classList.remove('drag')"
+             ondrop="handleDrop(event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+          </svg>
+          <div class="upload-label">Klikni ili prevuci sliku</div>
+          <div class="upload-sub">JPG, PNG, PDF — max 5MB</div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*,application/pdf" style="display:none" onchange="handleFile(this.files[0])">
+        <div class="upload-preview" id="uploadPreview">
+          <img id="previewImg" src="" alt="">
+          <div class="file-name" id="previewName"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Napomena</label>
+        <input type="text" id="exp_note" placeholder="Opcionalno...">
+      </div>
+      <button class="submit-btn green" id="expSubmitBtn" onclick="submitExpense()">Pošalji trošak</button>
+    </div>`;
+
+  // Monthly summary
+  if (expenses.length > 0) {
+    html += `
+      <div class="stats-grid">
+        <div class="stat-box red">
+          <div class="sval">${fmtEur(totalMonth)}</div>
+          <div class="slbl">Troškovi ovaj mj.</div>
+        </div>
+        <div class="stat-box">
+          <div class="sval">${pendingCount}</div>
+          <div class="slbl">Na čekanju odobrenja</div>
+        </div>
+      </div>
+
+      <div class="section-hdr">
+        Troškovi ovaj mjesec
+        <span class="section-count">${expenses.length} stavka</span>
+      </div>`;
+
+    html += expenses.map(e => `
+      <div class="log-item">
+        <div class="log-item-header">
+          <span class="log-date">${e.date}</span>
+          <span class="log-amount">${fmtEur(e.amount)}</span>
+        </div>
+        <div class="log-desc">${e.description || '—'}</div>
+        <div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;align-items:center;">
+          ${e.sites ? `<span class="log-site">${e.sites.name}</span>` : ''}
+          <span class="log-badge ${e.approved ? 'badge-approved':'badge-pending'}">${e.approved ? '✓ Odobreno':'⏳ Na čekanju'}</span>
+          <span style="font-size:11px;color:var(--text-faint);">${CAT_LABELS[e.category] || e.category || ''}</span>
+          ${e.note ? `<span style="font-size:11px;color:var(--text-faint);">· ${e.note}</span>` : ''}
+        </div>
+      </div>`).join('');
+  } else if (!expRes.error) {
+    html += `<div class="empty-state">Nema troškova ovaj mjesec.</div>`;
+  }
+
+  document.getElementById('panelBody').innerHTML = html;
+  uploadedFile = null;
+}
+
+function handleFile(file) {
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { toast('Fajl je prevelik (max 5MB)', 'error'); return; }
+  uploadedFile = file;
+  const preview = document.getElementById('uploadPreview');
+  if (!preview) return;
+  preview.style.display = 'block';
+  document.getElementById('previewName').textContent = file.name;
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.getElementById('previewImg');
+      if (img) { img.src = e.target.result; img.style.display = 'block'; }
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadArea')?.classList.remove('drag');
+  handleFile(e.dataTransfer.files[0]);
+}
+
+async function submitExpense() {
+  const amount   = parseFloat(document.getElementById('exp_amount').value);
+  const site_id  = document.getElementById('exp_site').value || null;
+  const desc     = document.getElementById('exp_desc').value.trim();
+  const date     = document.getElementById('exp_date').value;
+  const category = document.getElementById('exp_cat').value;
+  const note     = document.getElementById('exp_note').value.trim();
+
+  if (!amount || amount <= 0) { toast('Upiši iznos', 'error'); return; }
+  if (!desc) { toast('Upiši opis troška', 'error'); return; }
+  if (!site_id) { toast('Odaberi gradilište', 'error'); return; }
+
+  const btn = document.getElementById('expSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Šaljem...';
+
+  try {
+    let receipt_url = null;
+
+    if (uploadedFile) {
+      const ext = uploadedFile.name.split('.').pop().toLowerCase();
+      const path = `${currentWorker.id}/${Date.now()}.${ext}`;
+      const { data: upData, error: upErr } = await sb.storage.from('receipts').upload(path, uploadedFile);
+      if (upErr) {
+        // Don't block submission if upload fails, just warn
+        toast('Slika nije uploadana, ali trošak je poslan.', 'error');
+      } else {
+        receipt_url = upData.path;
+      }
+    }
+
+    const { error } = await sb.from('expenses').insert({
+      worker_id: currentWorker.id,
+      site_id,
+      description: desc,
+      amount,
+      category,
+      date,
+      receipt_url,
+      note: note || null
+    });
+
+    if (error) throw new Error(error.message);
+
+    uploadedFile = null;
+    toast('Trošak uspješno poslan!', 'success');
+    renderRacuni();
+
+  } catch(e) {
+    toast('Greška: ' + e.message, 'error');
+    btn.disabled = false;
+    btn.innerHTML = 'Pošalji trošak';
+  }
+}
+
+// ── TAB: MOJ PREGLED ──────────────────────────────────────────
+async function renderPregled() {
+  const now = new Date();
+  const mStart = monthStart(now);
+  const mEnd   = monthEnd(now);
+  const mKey   = monthKey(now);
+  const mLabel = `${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+
+  // Load everything in parallel — use separate queries for safety
+  const [logsRes, expRes, payRes] = await Promise.all([
+    sb.from('work_logs')
+      .select('id,hours,date,description,work_type,sites(name)')
+      .eq('worker_id', currentWorker.id)
+      .gte('date', mStart)
+      .lte('date', mEnd)
+      .order('date', {ascending:false})
+      .get(),
+
+    sb.from('expenses')
+      .select('id,amount,description,date,approved,category')
+      .eq('worker_id', currentWorker.id)
+      .gte('date', mStart)
+      .lte('date', mEnd)
+      .get(),
+
+    // Try payroll table — gracefully handle if it doesn't exist
+    sb.from('payroll')
+      .select('*')
+      .eq('worker_id', currentWorker.id)
+      .order('month', {ascending:false})
+      .limit(3)
+      .get()
+  ]);
+
+  const logs = logsRes.data || [];
+  const expenses = expRes.data || [];
+  const payroll = payRes.data || [];
+
+  const totalHours = logs.reduce((a, l) => a + parseFloat(l.hours||0), 0);
+  const totalExpenses = expenses.reduce((a, e) => a + parseFloat(e.amount||0), 0);
+
+  // Find this month's pay record
+  const thisPay = payroll.find(p => p.month === mKey);
+  const netPay = thisPay
+    ? parseFloat(thisPay.base_salary||0) + parseFloat(thisPay.bonus||0) - parseFloat(thisPay.deduction||0)
+    : null;
+
+  let html = `
+    <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:14px;">${mLabel}</div>
+
+    <div class="stats-grid">
+      <div class="stat-box blue">
+        <div class="sval">${totalHours}h</div>
+        <div class="slbl">Sati ovaj mj.</div>
+      </div>
+      <div class="stat-box ${netPay !== null ? 'green' : ''}">
+        <div class="sval">${netPay !== null ? fmtEur(netPay) : '—'}</div>
+        <div class="slbl">Plaća ovaj mj.</div>
+      </div>
+    </div>`;
+
+  // Show payroll errors gracefully
+  if (payRes.error) {
+    html += `<div class="error-state" style="margin-bottom:12px;">ℹ Plaće nisu dostupne (${payRes.error.message})</div>`;
+  } else if (thisPay) {
+    html += `
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-title">Plaća — ${mLabel}</div>
+        <div class="pay-row"><span class="pay-row-label">Osnovna plaća</span><span class="pay-row-val">${fmtEur(thisPay.base_salary)}</span></div>
+        ${parseFloat(thisPay.bonus)>0 ? `<div class="pay-row"><span class="pay-row-label">Dodaci</span><span class="pay-row-val" style="color:var(--green);">+ ${fmtEur(thisPay.bonus)}</span></div>` : ''}
+        ${parseFloat(thisPay.deduction)>0 ? `<div class="pay-row"><span class="pay-row-label">Odbitci</span><span class="pay-row-val" style="color:var(--red);">− ${fmtEur(thisPay.deduction)}</span></div>` : ''}
+        <div class="pay-total"><span>Neto isplata</span><span style="font-family:'DM Mono',monospace;">${fmtEur(netPay)}</span></div>
+        <div style="margin-top:6px;">
+          <span class="log-badge ${thisPay.status==='paid'?'badge-approved':'badge-pending'}">
+            ${thisPay.status==='paid' ? '✓ Isplaćeno' : '⏳ Na čekanju'}
+          </span>
+          ${thisPay.payment_date ? `<span style="font-size:11px;color:var(--text-faint);margin-left:8px;">Datum: ${thisPay.payment_date}</span>` : ''}
+        </div>
+      </div>`;
+  } else if (!payRes.error) {
+    html += `
+      <div class="card" style="margin-bottom:12px;border-left:3px solid var(--amber);">
+        <div style="font-size:13px;color:var(--text-muted);">Plaća za ${mLabel} još nije evidentirana.</div>
+      </div>`;
+  }
+
+  // Work logs this month
+  html += `
+    <div class="section-hdr">
+      Sati ovaj mjesec
+      <span class="section-count">${logs.length} unos(a) · ${totalHours}h ukupno</span>
+    </div>`;
+
+  if (logsRes.error) {
+    html += `<div class="error-state">Greška pri učitavanju sati: ${logsRes.error.message}</div>`;
+  } else if (logs.length) {
+    html += logs.map(l => `
+      <div class="log-item">
+        <div class="log-item-header">
+          <span class="log-date">${l.date}</span>
+          <span class="log-hours">${l.hours}h</span>
+        </div>
+        <div class="log-desc">${l.description || TYPE_LABELS[l.work_type] || '—'}</div>
+        ${l.sites ? `<span class="log-site">${l.sites.name}</span>` : ''}
+      </div>`).join('');
+  } else {
+    html += `<div class="empty-state">Nema upisanih sati ovaj mjesec.</div>`;
+  }
+
+  // Expenses this month
+  if (expenses.length > 0) {
+    html += `
+      <div class="section-hdr" style="margin-top:16px;">
+        Troškovi ovaj mjesec
+        <span class="section-count">${expenses.length} stavka · ${fmtEur(totalExpenses)}</span>
+      </div>`;
+    html += expenses.map(e => `
+      <div class="log-item">
+        <div class="log-item-header">
+          <span class="log-date">${e.date}</span>
+          <span class="log-amount">${fmtEur(e.amount)}</span>
+        </div>
+        <div class="log-desc">${e.description || '—'}</div>
+        <div style="display:flex;gap:6px;margin-top:4px;">
+          <span class="log-badge ${e.approved ? 'badge-approved':'badge-pending'}">${e.approved ? '✓ Odobreno':'⏳ Na čekanju'}</span>
+          <span style="font-size:11px;color:var(--text-faint);">${CAT_LABELS[e.category]||''}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  document.getElementById('panelBody').innerHTML = html;
+}
+
+// ── SCREEN SWITCHER ───────────────────────────────────────────
+function showScreen(screen) {
+  document.getElementById('loginScreen').style.display   = screen === 'login'  ? 'flex'  : 'none';
+  document.getElementById('setupScreen').style.display   = screen === 'setup'  ? 'flex'  : 'none';
+  const panel = document.getElementById('mainPanel');
+  if (screen === 'panel') panel.classList.add('active');
+  else panel.classList.remove('active');
+}
+
+function showErr(el, msg) { el.textContent = msg; el.classList.add('show'); }
+
+// ── AUTO LOGIN ────────────────────────────────────────────────
+async function tryAutoLogin() {
+  const session = getSession();
+  if (!session || (Date.now() - session.at > 24*60*60*1000)) { clearSession(); return; }
+
+  try {
+    const { data } = await sb.from('worker_sessions')
+      .select('id,worker_id,expires_at,workers(*)')
+      .eq('token', session.token)
+      .gt('expires_at', new Date().toISOString())
+      .limit(1)
+      .get();
+
+    if (data && data.length > 0 && data[0].workers) {
+      currentWorker = data[0].workers;
+      enterPanel(currentWorker);
+    } else {
+      clearSession();
+    }
+  } catch(e) { clearSession(); }
+}
+
+// ── KEYBOARD ─────────────────────────────────────────────────
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('loginName').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
+
+// ── INIT ─────────────────────────────────────────────────────
+tryAutoLogin();
+</script>
+
+
+</body></html>
