@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Manager PRO — Prijava</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#1d4ed8;--red:#dc2626;--green:#16a34a;--amber:#d97706}
+body{font-family:'DM Sans',sans-serif;background:#0c1220;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#1a2540;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.logo{text-align:center;margin-bottom:32px}
+.logo .lbl{font-size:11px;font-family:'DM Mono',monospace;letter-spacing:.14em;color:#4b6a9b;text-transform:uppercase}
+.logo .title{font-size:32px;font-weight:700;color:#f1f5f9;margin-top:4px}
+.logo .sub{font-size:13px;color:#64748b;margin-top:6px}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+.field input{width:100%;padding:12px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;font-size:15px;font-family:'DM Sans',sans-serif;color:#f1f5f9;transition:border-color .15s}
+.field input:focus{outline:none;border-color:#3b82f6;background:rgba(59,130,246,.08)}
+.field input::placeholder{color:#475569}
+.btn{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;margin-top:4px}
+.btn:hover{background:#1e40af}
+.btn:disabled{background:#334155;cursor:not-allowed}
+.error{background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.3);border-radius:8px;padding:10px 14px;font-size:13px;color:#fca5a5;margin-top:12px;display:none}
+.error.show{display:block}
+.hint{text-align:center;font-size:12px;color:#334155;margin-top:20px}
+/* Setup screen */
+.setup{display:none}
+.strength{height:4px;border-radius:99px;background:rgba(255,255,255,.1);margin-top:6px;overflow:hidden}
+.strength-fill{height:100%;border-radius:99px;transition:width .3s,background .3s}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="card" id="loginCard">
+  <div class="logo">
+    <div class="lbl">Manager</div>
+    <div class="title">PRO</div>
+    <div class="sub">Prijava</div>
+  </div>
+  <div class="field">
+    <label>Ime i prezime</label>
+    <input type="text" id="loginName" placeholder="Npr. Ivan Horvat" autocomplete="name" autocapitalize="words" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
+  </div>
+  <div class="field">
+    <label>Lozinka</label>
+    <input type="password" id="loginPass" placeholder="Tvoja lozinka" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+  </div>
+  <button class="btn" id="loginBtn" onclick="doLogin()">Prijava</button>
+  <div class="error" id="loginError"></div>
+  <div class="hint">Manager PRO</div>
+</div>
+
+<!-- SETUP PASSWORD -->
+<div class="card setup" id="setupCard">
+  <div class="logo">
+    <div class="lbl">Manager</div>
+    <div class="title">PRO</div>
+    <div class="sub">Prva prijava — postavi lozinku</div>
+  </div>
+  <div style="text-align:center;margin-bottom:20px;font-size:14px;color:#94a3b8">Dobrodošao, <strong style="color:#f1f5f9" id="setupName"></strong></div>
+  <div class="field">
+    <label>Nova lozinka</label>
+    <input type="password" id="newPass1" placeholder="Min. 6 znakova" oninput="checkStrength()">
+    <div class="strength"><div class="strength-fill" id="strengthFill" style="width:0%"></div></div>
+  </div>
+  <div class="field">
+    <label>Ponovi lozinku</label>
+    <input type="password" id="newPass2" placeholder="Isti kao gore" onkeydown="if(event.key==='Enter')doSetup()">
+  </div>
+  <button class="btn" id="setupBtn" onclick="doSetup()">Spremi i nastavi</button>
+  <div class="error" id="setupError"></div>
+</div>
+
+<script>
+const SB_URL = 'https://sygqmljlbnquwssemrae.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5Z3FtbGpsYm5xdXdzc2VtcmFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNDE0ODcsImV4cCI6MjA5MjgxNzQ4N30.MLvlvtOZL_Rxwt6oO5HI-6ctQSvTBkbn9MiZY_t8YRY';
+
+let pendingWorker = null;
+
+async function sbGet(table, params) {
+  const url = new URL(`${SB_URL}/rest/v1/${table}`);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.append(k, v));
+  const r = await fetch(url.toString(), { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } });
+  return r.json();
+}
+
+async function sbPatch(table, filter, body) {
+  const url = new URL(`${SB_URL}/rest/v1/${table}`);
+  Object.entries(filter).forEach(([k,v]) => url.searchParams.append(k, v));
+  return fetch(url.toString(), { method:'PATCH', headers:{ 'apikey':SB_KEY, 'Authorization':'Bearer '+SB_KEY, 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+}
+
+async function sbPost(table, body) {
+  return fetch(`${SB_URL}/rest/v1/${table}`, { method:'POST', headers:{ 'apikey':SB_KEY, 'Authorization':'Bearer '+SB_KEY, 'Content-Type':'application/json', 'Prefer':'return=representation' }, body: JSON.stringify(body) });
+}
+
+async function hashPwd(pwd) {
+  const enc = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey('raw', enc.encode(pwd), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name:'PBKDF2', salt, iterations:100000, hash:'SHA-256' }, key, 256);
+  return JSON.stringify({ salt: Array.from(salt), hash: Array.from(new Uint8Array(bits)) });
+}
+
+async function checkPwd(pwd, stored) {
+  try {
+    const { salt, hash } = JSON.parse(stored);
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey('raw', enc.encode(pwd), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits({ name:'PBKDF2', salt:new Uint8Array(salt), iterations:100000, hash:'SHA-256' }, key, 256);
+    return JSON.stringify(Array.from(new Uint8Array(bits))) === JSON.stringify(hash);
+  } catch(e) { return false; }
+}
+
+function checkStrength() {
+  const pwd = document.getElementById('newPass1').value;
+  const fill = document.getElementById('strengthFill');
+  let s = 0;
+  if (pwd.length >= 6) s += 33;
+  if (pwd.match(/[A-Z]/)) s += 33;
+  if (pwd.match(/[0-9!@#$%]/)) s += 34;
+  fill.style.width = s + '%';
+  fill.style.background = s < 33 ? '#dc2626' : s < 66 ? '#d97706' : '#16a34a';
+}
+
+function redirectTo(worker, token) {
+  // Save session
+  localStorage.setItem('mp_session', JSON.stringify({ worker, token, at: Date.now() }));
+  // Redirect based on role
+  if (worker.is_admin) {
+    window.location.href = 'index.html';
+  } else {
+    window.location.href = 'worker.html';
+  }
+}
+
+async function doLogin() {
+  const name = document.getElementById('loginName').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const err  = document.getElementById('loginError');
+  const btn  = document.getElementById('loginBtn');
+  err.classList.remove('show');
+
+  if (!name) { err.textContent='Upiši ime i prezime.'; err.classList.add('show'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Provjera...';
+
+  try {
+    const workers = await sbGet('workers', { 'full_name': `ilike.${name}`, 'active': 'eq.true', 'select': '*', 'limit': '1' });
+
+    if (!workers || workers.length === 0) {
+      err.textContent = 'Korisnik nije pronađen.';
+      err.classList.add('show');
+      return;
+    }
+
+    const worker = workers[0];
+
+    if (!worker.password_hash) {
+      pendingWorker = worker;
+      document.getElementById('setupName').textContent = worker.full_name;
+      document.getElementById('loginCard').style.display = 'none';
+      document.getElementById('setupCard').style.display = 'block';
+      return;
+    }
+
+    if (!pass) { err.textContent='Upiši lozinku.'; err.classList.add('show'); return; }
+
+    const valid = await checkPwd(pass, worker.password_hash);
+    if (!valid) {
+      err.textContent = 'Pogrešna lozinka.';
+      err.classList.add('show');
+      document.getElementById('loginPass').value = '';
+      return;
+    }
+
+    const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 24*60*60*1000).toISOString();
+    await sbPost('worker_sessions', { worker_id: worker.id, token, expires_at: expiresAt });
+
+    redirectTo(worker, token);
+
+  } catch(e) {
+    err.textContent = e.message || 'Greška.';
+    err.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Prijava';
+  }
+}
+
+async function doSetup() {
+  const p1  = document.getElementById('newPass1').value;
+  const p2  = document.getElementById('newPass2').value;
+  const btn = document.getElementById('setupBtn');
+  const err = document.getElementById('setupError');
+  err.classList.remove('show');
+
+  if (p1.length < 6) { err.textContent='Min. 6 znakova.'; err.classList.add('show'); return; }
+  if (p1 !== p2)     { err.textContent='Lozinke se ne podudaraju.'; err.classList.add('show'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Postavljam...';
+
+  try {
+    const hash = await hashPwd(p1);
+    await sbPatch('workers', { 'id': `eq.${pendingWorker.id}` }, { password_hash: hash });
+
+    const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 24*60*60*1000).toISOString();
+    await sbPost('worker_sessions', { worker_id: pendingWorker.id, token, expires_at: expiresAt });
+
+    redirectTo(pendingWorker, token);
+  } catch(e) {
+    err.textContent = 'Greška: ' + e.message;
+    err.classList.add('show');
+    btn.disabled = false;
+    btn.innerHTML = 'Spremi i nastavi';
+  }
+}
+
+// Auto-login check
+(async function() {
+  try {
+    const session = JSON.parse(localStorage.getItem('mp_session') || '{}');
+    if (!session.token || (Date.now() - session.at > 24*60*60*1000)) return;
+    const data = await sbGet('worker_sessions', {
+      'token': `eq.${session.token}`,
+      'expires_at': `gt.${new Date().toISOString()}`,
+      'select': 'id',
+      'limit': '1'
+    });
+    if (data && data.length > 0) {
+      redirectTo(session.worker, session.token);
+    } else {
+      localStorage.removeItem('mp_session');
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
